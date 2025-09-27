@@ -1,30 +1,28 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcrypt');
-const helmet = require('helmet'); // Added helmet for security
+const helmet = require('helmet');
 
 const app = express();
-// CRITICAL FIX FOR DEPLOYMENT: Use the port provided by the host (Render), or default to 8000.
 const PORT = process.env.PORT || 8000; 
 
-// ===== Middleware =====
-app.use(helmet()); // Basic security headers
+//  Middleware 
+app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
 
 
-// ===== MongoDB Connection =====
+//  MongoDB Connection 
 const MONGO_URI = process.env.MONGO_URI;
 console.log("Loaded MONGO_URI:", MONGO_URI);
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+  .then(() => console.log("Connected to MongoDB"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 // Define User Schema (required for login/register)
 const userSchema = new mongoose.Schema({
@@ -33,13 +31,12 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model('User', userSchema);
 
-// ===== Session Setup =====
+//  Session Setup 
 app.use(session({
   secret: process.env.SESSION_SECRET || "dev-secret",
   resave: false,
   saveUninitialized: false,
   store: MongoStore.create({ mongoUrl: MONGO_URI }),
-  // Use secure: true and sameSite: 'none' for cross-site cookie access in a production environment like Render
   cookie: { maxAge: 1000 * 60 * 60 * 24, secure: true, sameSite: 'none' } 
 }));
 
@@ -63,14 +60,11 @@ const animeSchema = new mongoose.Schema({
 const Anime = mongoose.model('Anime', animeSchema);
 
 
-// ===== Auth Routes =====
-
+//  Auth Routes 
 // Registration (also handles immediate login)
 app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
-    
-    // Check if user already exists
     if (await User.findOne({ username })) {
       return res.status(400).json({ error: "Username already exists." });
     }
@@ -98,7 +92,7 @@ app.post('/login', async (req, res) => {
     if (!valid) return res.status(400).json({ error: "Invalid username or password" });
 
     req.session.userId = user._id;
-    res.json({ message: "✅ Login successful" });
+    res.json({ message: "Login successful" });
   } catch (err) {
     res.status(500).json({ error: "Server error during login" });
   }
@@ -110,7 +104,7 @@ app.post('/logout', (req, res) => {
     req.session.destroy(err => {
       if (err) return res.status(500).json({ error: "Logout failed" });
       res.clearCookie('connect.sid');
-      res.json({ message: "✅ Logged out" });
+      res.json({ message: "Logged out" });
     });
   } else {
     res.json({ message: "No active session" });
@@ -156,7 +150,7 @@ function addDerivedFields(anime) {
     return { ...anime.toObject(), progress, category };
 }
 
-// ===== CRUD Routes (Protected) =====
+//  CRUD Routes (Protected) 
 
 // GET /results (READ)
 app.get('/results', checkAuth, async (req, res) => {
@@ -195,7 +189,7 @@ app.put('/update', checkAuth, async (req, res) => {
         const { _id, title, episodes, watched, status } = req.body;
         
         const updatedAnime = await Anime.findOneAndUpdate(
-            { _id, userId: req.session.userId }, // Find by ID AND User ID
+            { _id, userId: req.session.userId },
             { title, episodes, watched, status },
             { new: true, runValidators: true }
         );
