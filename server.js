@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const bcrypt = require('bcryptjs'); // Updated to bcryptjs
+const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 
 const app = express();
@@ -18,18 +18,33 @@ if (!MONGO_URI || !SESSION_SECRET) {
     process.exit(1);
 }
 
+// FIX 1: Trust Proxy for secure session cookies on Render/HTTPS
+app.set('trust proxy', 1); 
+
+// FIX 2: Configure Helmet to allow CDN connections (Bootstrap/JS)
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            // Allow resources to load from the origin (self) and jsDelivr (for Bootstrap/CDNs)
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "https://cdn.jsdelivr.net"], 
+            styleSrc: ["'self'", "https://cdn.jsdelivr.net", "'unsafe-inline'"], // 'unsafe-inline' is needed for Bootstrap styles
+            imgSrc: ["'self'", "data:"],
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net"], // Allow fetching map files and other CDN assets
+        },
+    },
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+
 // MongoDB Connection 
 console.log("Attempting to connect to MongoDB...");
 
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log("Connected to MongoDB");
-
-    // Middleware 
-    app.use(helmet());
-    app.use(express.json());
-    app.use(express.urlencoded({ extended: true }));
-    app.use(express.static("public"));
 
     // Define User Schema (required for login/register)
     const userSchema = new mongoose.Schema({
@@ -86,6 +101,7 @@ mongoose.connect(MONGO_URI)
             req.session.userId = user._id;
             res.json({ message: "Registered and logged in" });
         } catch (err) {
+            console.error("Registration Error:", err);
             res.status(500).json({ error: "Server error during registration" });
         }
     });
@@ -104,6 +120,7 @@ mongoose.connect(MONGO_URI)
             req.session.userId = user._id;
             res.json({ message: "Login successful" });
         } catch (err) {
+            console.error("Login Error:", err);
             res.status(500).json({ error: "Server error during login" });
         }
     });
