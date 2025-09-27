@@ -1,0 +1,46 @@
+body {
+  background: #111;
+  color: #eee;
+  font-family: 'Arial', sans-serif;
+  margin: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #ff4c4c;
+}
+
+form {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+form input, form select, form button {
+  padding: 6px;
+  border-radius: 6px;
+  border: none;
+}
+
+table {
+  margin: 0 auto;
+  border-collapse: collapse;
+  width: 90%;
+  background: #222;
+}
+
+th, td {
+  border: 1px solid #444;
+  padding: 10px;
+  text-align: center;
+}
+
+button.delete-btn {
+  background: #ff4c4c;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
