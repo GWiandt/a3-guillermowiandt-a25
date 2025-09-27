@@ -3,7 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const helmet = require('helmet');
 
 const app = express();
